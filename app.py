@@ -1,36 +1,63 @@
-from flask import Flask, jsonify
-from models import model_results
+from flask import Flask, jsonify, abort, make_response, request
+from models import Model
+from params import *
 
+##### Model ####
+def model_setup(user_params=False):
+	
+	# user_initial_conditions = 
+	# user_params = 
+	# user_t = 
+
+	if user_params:
+		model = Model(name="SEIR",initial_conditions=user_initial_conditions,params=user_params,t=user_t)
+		model_results = model.get_estimates()
+
+		return model_results 		
+
+
+	# default parameters
+	else:
+		model = Model(name="SEIR",initial_conditions=Condiciones_Iniciales,params=parametros,t=periodo_evaluacion)
+		model_results = model.get_estimates()
+
+		return model_results 
+
+model_results = model_setup()
+
+##### API ###### 
 app = Flask(__name__)
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+# GET Commands
 @app.route('/api/seir', methods=['GET'])
 def get_seir():
-    return jsonify({'seir': model_results})
 
-@app.route('/api/seir/<string:result>', methods=['GET'])
-def get_result():
-	model_result = [model_result for model_result in model_results if model_results['results'] == result]
-	
-	if len(model_result) == 0:
-		abort(404)
+	seir_data = {'seir': model_results}
 
-	return jsonify({'result': model_result[0]})
+	# looks for any arguments after api/seir
+	# eg: api/seir?estimate=susceptible
+	if 'estimate' in request.args:
+		query = request.values['estimate']
 
-# @app.route('/api/seir/susceptible', methods=['GET'])
-# def get_susceptible():
-# 	return jsonify({'susceptible':model_results["susceptible"]})
+		if query in seir_data['seir'].keys():
+			return jsonify({'{}'.format(query) : seir_data['seir'][query]})
 
-# @app.route('/api/seir/exposed', methods=['GET'])
-# def get_exposed():
-# 	return jsonify({'exposed':model_results["exposed"]})
+		else:
+			abort(404)
+	else:
+		return jsonify(seir_data)
 
-# @app.route('/api/seir/infected', methods=['GET'])
-# def get_infected():
-# 	return jsonify({'infected':model_results["infected"]})
-
-# @app.route('/api/seir/recovered', methods=['GET'])
-# def get_recovered():
-# 	return jsonify({'recovered':model_results["recovered"]})
+# # POST 
+# @app.route('/api/seir', methods=['POST'])
+# def create_params():
+# 	if not request.json or not 'title' in request.json:
+#         abort(400)
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+

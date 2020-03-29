@@ -1,11 +1,18 @@
 from params import *
 
 class Model(object):
-  def __init__(self,name):
+  def __init__(self,name,initial_conditions,params,t):
     self.name = name
+    self.initial_conditions = initial_conditions
+    self.params = params
+    self.t = t
 
-  def SEIR(self,initial_conditions,params,t,theta=1):
+  def SEIR(self,theta=1):
     
+    initial_conditions = self.initial_conditions
+    params = self.params
+    t = self.t
+
     So,Eo,Io,Ro = initial_conditions
     S,E,I,R = [So],[Eo],[Io],[Ro]
     alpha,beta,gamma = params
@@ -22,25 +29,15 @@ class Model(object):
 
     return S,E,I,R
 
-# parametros 
-params = parametros
-initial_conditions = Condiciones_Iniciales
-t = periodo_evaluacion
+  def get_estimates(self):
+    S,E,I,R = self.SEIR()
 
-# setting up the model
-seir = Model("SEIR")
-seir_model = seir.SEIR(initial_conditions,params,t)
+    model_results = {
+      'susceptible':S, 
+      'exposed':E, 
+      'infected':I,
+      'recovered':R
+    }
 
-S,E,I,R = seir_model
-
-model_results = {
-'results':{
-  'susceptible':S, 
-  'exposed':E, 
-  'infected':I,
-  'recovered':R
-  }
-}
-
-
-
+    return model_results
+ 
